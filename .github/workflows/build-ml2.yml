@@ -1,0 +1,40 @@
+name: Build ML-2
+
+on:
+  push:
+    paths:
+      - 'ML2/**'
+      - '.github/workflows/build-ml2.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ML2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ML2-VST3-${{ runner.os }}
+          path: ML2/build/ML2_artefacts/Release/VST3/
+
+      - name: Upload AU (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ML2-AU-macOS
+          path: ML2/build/ML2_artefacts/Release/AU/
